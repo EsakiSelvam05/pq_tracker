@@ -1,0 +1,60 @@
+# Name of your workflow.
+name: Deploy React App to Hostinger
+
+# This section defines the trigger for the workflow.
+on:
+  push:
+    branches:
+      - main # Or 'master', depending on your repository
+
+# A workflow run is made up of one or more jobs.
+jobs:
+  # This workflow contains a single job called "build-and-deploy".
+  build-and-deploy:
+    # The type of runner that the job will run on.
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job.
+    steps:
+    # Step 1: Check out the repository's code.
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Node.js.
+    # This action sets up a Node.js environment for you to use in your workflow.
+    # You can specify the version of Node.js you want to use.
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Specify your project's Node.js version here
+        cache: 'npm' # Caches npm dependencies for faster builds
+
+    # Step 3: Install dependencies.
+    # This command installs all the packages listed in your package.json file.
+    - name: Install dependencies
+      run: npm install
+
+    # Step 4: Build the React application.
+    # This command creates a 'build' directory with a production build of your app.
+    - name: Build React App
+      run: npm run build
+      # If your project uses environment variables, you can add them here
+      # env:
+      #   CI: false 
+      #   REACT_APP_API_KEY: ${{ secrets.REACT_APP_API_KEY }}
+
+    # Step 5: Deploy the 'build' folder to Hostinger.
+    - name: FTP Deploy
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        # FTP server, username, and password from GitHub secrets
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+
+        # The remote directory on your Hostinger server.
+        server-dir: public_html/
+
+        # IMPORTANT: This is the key change.
+        # We are now uploading the contents of the 'build' folder.
+        local-dir: ./build/
